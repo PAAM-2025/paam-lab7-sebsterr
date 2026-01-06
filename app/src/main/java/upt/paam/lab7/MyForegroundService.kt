@@ -1,12 +1,15 @@
 package upt.paam.lab7
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Notification
+import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.IBinder
+import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -47,31 +50,44 @@ class MyForegroundService : Service() {
         }
     }
 
-    private fun buildNotification(msg: String, progress: Int): Notification {
-        // TODO 2: Create a NotificationCompat.Builder inside your service
-        //   - Use "service_channel" as the channelId
-        //   - Set a title, text, and small icon
-        //   - Mark the notification as ongoing (persistent)`
-        return TODO("Provide the return value")
 
-        // TODO 3: Create a different notification with NotificationCompat.Builder inside your service
-        // that opens a certain screen when you press on it. Comment one implementation when you're done
+    private fun buildNotification(msg: String, progress: Int): Notification {
+
+        val intent = Intent(this, MainActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+
+        val pendingIntent = PendingIntent.getActivity(
+            this,
+            0,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        return NotificationCompat.Builder(this, "service_channel")
+            .setContentTitle("Foreground Service")
+            .setContentText(msg)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentIntent(pendingIntent)
+            .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .build()
     }
+
+    @Suppress("MissingPermission")
     private fun updateNotification(msg: String, progress: Int) {
         val manager = NotificationManagerCompat.from(this)
         val notification = buildNotification(msg, progress)
 
-        // Runtime permission check for Android 13+
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
             ActivityCompat.checkSelfPermission(
                 this,
                 android.Manifest.permission.POST_NOTIFICATIONS
             ) == PackageManager.PERMISSION_GRANTED
         ) {
-            manager.notify(1, notification)
+            manager.notify(1, buildNotification(msg, progress))
+            Log.d("SERVICE", "Notification updated: $msg")
         }
     }
-
 
     override fun onDestroy() {
         isRunning = false

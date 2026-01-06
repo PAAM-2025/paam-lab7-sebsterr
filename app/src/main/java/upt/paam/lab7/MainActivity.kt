@@ -38,7 +38,11 @@ class MainActivity : ComponentActivity() {
 
                     onStart = {
                         val intent = Intent(this, MyForegroundService::class.java)
-                        startService(intent)
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            startForegroundService(intent)
+                        } else {
+                            startService(intent)
+                        }
                     },
                     onStop = {
                         stopService(Intent(this, MyForegroundService::class.java))
